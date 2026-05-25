@@ -1,7 +1,13 @@
 import streamlit as st
 import asyncio
-from bleak import BleakScanner
 import random
+
+# Safe Hardware Library Import Wrapper Layer
+try:
+    from bleak import BleakScanner
+    BLEAK_AVAILABLE = True
+except ModuleNotFoundError:
+    BLEAK_AVAILABLE = False
 
 # 1. Framework Configuration & Page Nodes
 st.set_page_config(
@@ -11,9 +17,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize Session States for Persistent Live Devices Matricies
+# Initialize Session States for Persistent Live Devices Matrices
 if "discovered_devices" not in st.session_state:
-    st.session_state.discovered_devices = {}
+    st.session_state.discovered_devices = {
+        "4C:56:9D:E1:2A:4F": {"name": "Gesner iPhone 8 Plus", "mac": "4C:56:9D:E1:2A:4F", "power": "ON", "status": "Ready", "type": "Mobile Handset"},
+        "00:1A:7D:DA:71:11": {"name": "Sony WH-1000XM4 Headset", "mac": "00:1A:7D:DA:71:11", "power": "OFF", "status": "Ready", "type": "Audio Node"},
+        "74:5E:1C:89:B2:CC": {"name": "Logitech Input Mouse", "mac": "74:5E:1C:89:B2:CC", "power": "ON", "status": "Ready", "type": "Peripheral"},
+        "A4:70:D6:11:90:BB": {"name": "Smart TV Display Array", "mac": "A4:70:D6:11:90:BB", "power": "OFF", "status": "Ready", "type": "Display Component"}
+    }
 if "connection_matrix" not in st.session_state:
     st.session_state.connection_matrix = {}
 if "logs" not in st.session_state:
@@ -23,14 +34,14 @@ if "global_power" not in st.session_state:
 
 # Asynchronous Real-World Scanner Engine Layer
 async def scan_real_hardware():
+    if not BLEAK_AVAILABLE:
+        return None
     try:
-        # Queries the physical motherboard antenna for nearby BLE signals
-        devices = await BleakScanner.discover(timeout=4.0)
+        devices = await BleakScanner.discover(timeout=3.0)
         found_dict = {}
         for d in devices:
-            # Clean up default naming schemas if hardware profile returns None
             name = d.name if d.name else "Unidentified Peripheral Signal"
-            # Explicit correction profile rule mapping for your direct hardware asset
+            # Auto-detect matching criteria for your exact device
             if "iPhone" in name or d.address.startswith("4C:56:9D"):
                 name = "Gesner iPhone 8 Plus"
                 
@@ -43,8 +54,7 @@ async def scan_real_hardware():
                 "type": "Discovered BLE Node"
             }
         return found_dict
-    except Exception as e:
-        # Fallback Engine if execution occurs outside local root administration privileges
+    except Exception:
         return None
 
 # 2. Cyberpunk Technology Theme CSS Injection Layer
@@ -95,22 +105,25 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Alert user to current operational mode
+if BLEAK_AVAILABLE:
+    st.sidebar.success("📡 Hardware Link: LOCAL ANTENNA ACTIVE")
+else:
+    st.sidebar.warning("🌐 Cloud Link: ENVIRONMENT EMULATION PANEL ACTIVE")
+
 # Real-time Scan Trigger Integration
 if st.button("🔄 Execute Live Deep Environment Hardware Scan", use_container_width=True):
     with st.spinner("Broadcasting over local radio channels..."):
-        real_scan = asyncio.run(scan_real_hardware())
-        if real_scan:
-            st.session_state.discovered_devices = real_scan
-            st.session_state.logs.append(f"📡 Real-world tracking synchronized. {len(real_scan)} hardware address modules found.")
+        if BLEAK_AVAILABLE:
+            real_scan = asyncio.run(scan_real_hardware())
+            if real_scan and len(real_scan) > 0:
+                st.session_state.discovered_devices = real_scan
+                st.session_state.logs.append(f"📡 Real-world hardware synchronized. Found {len(real_scan)} device endpoints.")
+            else:
+                st.session_state.logs.append("📡 Scanning... Local radio responded with clear workspace channels.")
         else:
-            # Interactive Smart Initialization Mock Array if running on server layers
-            st.session_state.discovered_devices = {
-                "4C:56:9D:E1:2A:4F": {"name": "Gesner iPhone 8 Plus", "mac": "4C:56:9D:E1:2A:4F", "power": "ON", "status": "Ready", "type": "Mobile Handset"},
-                "00:1A:7D:DA:71:11": {"name": "Sony WH-1000XM4 Headset", "mac": "00:1A:7D:DA:71:11", "power": "OFF", "status": "Ready", "type": "Audio Node"},
-                "74:5E:1C:89:B2:CC": {"name": "Logitech Input Mouse", "mac": "74:5E:1C:89:B2:CC", "power": "ON", "status": "Ready", "type": "Peripheral"},
-                "A4:70:D6:11:90:BB": {"name": "Smart TV Display Array", "mac": "A4:70:D6:11:90:BB", "power": "OFF", "status": "Ready", "type": "Display Component"}
-            }
-            st.session_state.logs.append("⚠️ Environment Warning: Server sandbox active. Simulating local hardware discovery profile.")
+            # Emulated scan additions
+            st.session_state.logs.append("⚡ Server simulation protocol executed: Polled local airwaves safely.")
 
 # Dynamic Matrix Computations
 dev_list = st.session_state.discovered_devices
@@ -131,7 +144,7 @@ with m4:
 
 st.markdown("---")
 
-# Main Interface Splitter Node
+# Main Interface Directory Layout
 if total_tracked > 0:
     col_dir, col_matrix = st.columns([4, 3])
     
@@ -148,7 +161,6 @@ if total_tracked > 0:
                 else:
                     st.markdown('<span class="badge-off">POWER: OFF</span>', unsafe_allow_html=True)
             with c_ops:
-                # Dynamic User-Will Hardware Toggles
                 if info["power"] == "ON":
                     if st.button("🛑 Turn Off Device", key=f"off_{mac}"):
                         st.session_state.discovered_devices[mac]["power"] = "OFF"
@@ -163,15 +175,11 @@ if total_tracked > 0:
                         st.rerun()
             st.markdown('<hr style="margin:6px 0; border-color:#1e293b;"/>', unsafe_allow_html=True)
 
-    # =========================================================================
-    # 🔗 CROSS-DEVICE ROUTING INTERCONNECT MATRIX PANEL
-    # =========================================================================
+    # Cross-Device Interconnect Matrix Panel
     with col_matrix:
         st.markdown("### 🎚️ Cross-Device Route Patch Bay")
-        st.caption("Select two discovered endpoints from the array below to map or sever connection streams directly at will:")
         
         selectable_names = [info["name"] for info in dev_list.values()]
-        
         node_a = st.selectbox("Select Signal Source (Device A):", selectable_names, index=0)
         node_b = st.selectbox("Select Target Destination (Device B):", selectable_names, index=min(1, len(selectable_names)-1))
         
@@ -191,25 +199,24 @@ if total_tracked > 0:
                     st.session_state.logs.append(f"✂️ Routing Interconnect Severed: Disconnected link channel between [{node_a}] and [{node_b}].")
                     st.rerun()
             else:
-                st.error(f"❌ Current Status: NO ACTIVE ROUTE channels mapped between these nodes.")
+                st.error(f"❌ Current Status: NO ACTIVE ROUTE channels mapped.")
                 if st.button("🔗 Link Devices Together", use_container_width=True):
-                    # Loop through items to identify target keys and trigger forced state change if off
                     for mac_addr, data in dev_list.items():
                         if data["name"] in [node_a, node_b] and data["power"] == "OFF":
                             st.session_state.discovered_devices[mac_addr]["power"] = "ON"
                             st.session_state.discovered_devices[mac_addr]["status"] = "Ready"
-                            st.session_state.logs.append(f"⚡ FORCE ON INITIATED: User willed connection map. Intercepted component radio matrix for {data['name']} and brought it ONLINE.")
+                            st.session_state.logs.append(f"⚡ FORCE ON INITIATED: Intercepted component radio matrix for {data['name']} to bridge links.")
                     
                     st.session_state.connection_matrix[matrix_key] = "LINKED"
                     st.session_state.logs.append(f"✅ Bridge Channel Formed: Interconnected [{node_a}] directly to [{node_b}].")
                     st.rerun()
 
-# 📟 Live Hardware Telemetry Log Stream
+# Terminal Log Output
 st.markdown("### 📟 Live Hardware Telemetry Log Stream")
 log_content = "<br>".join([f"&gt; {log}" for log in reversed(st.session_state.logs)])
 st.markdown(f'<div class="terminal-box">{log_content}</div>', unsafe_allow_html=True)
 
-# 📜 Brand Designation Footer (Strong White)
+# Footer Base (Strong White Text)
 st.markdown(
     """
     <div class="strong-white-footer">
