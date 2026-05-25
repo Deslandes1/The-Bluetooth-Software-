@@ -114,13 +114,13 @@ else:
 
 st.sidebar.markdown("---")
 
-# Master System Switch Toggle (Simulating turning the panel antenna tracking layer on/off)
+# Master System Switch Toggle
 global_power_toggle = st.sidebar.toggle("Radio Frequency Power Transmitter", value=(st.session_state.global_power == "ON"))
 st.session_state.global_power = "ON" if global_power_toggle else "OFF"
 
 st.sidebar.markdown("---")
 
-# Manual Network Node Injector for testing custom profiles
+# Manual Network Node Injector - FIXED KEY DEFINITION
 st.sidebar.markdown("### 📡 Manual Device Injector")
 new_name = st.sidebar.text_input("Device Common Identifier:", placeholder="e.g. Beats Studio Buds")
 new_type = st.sidebar.selectbox("Device Spectrum Bracket:", ["Audio / Headset", "Mobile Handset", "Input / Peripheral", "Wearable / IoT"])
@@ -128,7 +128,14 @@ new_type = st.sidebar.selectbox("Device Spectrum Bracket:", ["Audio / Headset", 
 if st.sidebar.button("⚡ Inject Device Into Matrix"):
     if new_name:
         mac_fake = f"{random.randint(10,99)}:{random.randint(10,99)}:7D:DA:71:{random.randint(10,99)}"
-        st.session_state.discovered_devices[mac_fake] = {"name": new_name, "mac": mac_fake, "rssi": "-60 dBm", "status": "Active / Broadcasting", "type": new_type}
+        # Explicitly defining 'rssi' here prevents downstream layout rendering KeyErrors
+        st.session_state.discovered_devices[mac_fake] = {
+            "name": new_name, 
+            "mac": mac_fake, 
+            "rssi": f"-{random.randint(45, 75)} dBm", 
+            "status": "Active / Broadcasting", 
+            "type": new_type
+        }
         st.session_state.logs.append(f"📥 New Target Registered: {new_name} mapped to [{mac_fake}].")
         st.rerun()
 
@@ -180,8 +187,11 @@ else:
                     st.markdown(f"📡 **{info['name']}**")
                     st.caption(f"MAC Address: `{mac}` | Profile Class: *{info['type']}*")
                 with c_rssi:
-                    st.markdown(f"📶 Signal: **{info['rssi']}**")
-                    st.caption(f"🟢 {info['status']}")
+                    # Safe dictionary fallback mapping parsing prevents unexpected crashes
+                    rssi_val = info.get('rssi', '-60 dBm')
+                    status_val = info.get('status', 'Active / Broadcasting')
+                    st.markdown(f"📶 Signal: **{rssi_val}**")
+                    st.caption(f"🟢 {status_val}")
                 st.markdown('<hr style="margin:6px 0; border-color:#1e293b;"/>', unsafe_allow_html=True)
 
         # 2. Authentic Interconnect Cross-Routing Engine Panel
