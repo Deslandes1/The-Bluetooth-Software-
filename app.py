@@ -22,6 +22,8 @@ if "global_power" not in st.session_state:
     st.session_state.global_power = "ON"
 if "logs" not in st.session_state:
     st.session_state.logs = ["💡 Panel Engine Online.", "📡 Core Bluetooth Scanning Protocols initialized..."]
+if "active_remote" not in st.session_state:
+    st.session_state.active_remote = "DEV-4412 (Gesner iPhone 15 Pro)"
 
 # Calculate live matrix states dynamically
 total_devs = len(st.session_state.devices)
@@ -64,16 +66,6 @@ st.markdown(
         letter-spacing: 0.5px;
     }
     
-    /* Device Cards Container Style */
-    .device-card {
-        background: #151f32;
-        border: 1px solid #223452;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 15px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-    }
-    
     /* Dynamic Power Badges */
     .badge-on {
         background-color: #059669;
@@ -94,6 +86,16 @@ st.markdown(
         display: inline-block;
     }
     
+    /* Remote Interface Box Decoration */
+    .remote-hull {
+        background: radial-gradient(circle at top left, #1e1b4b, #0f172a);
+        border: 2px solid #7928ca;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 0 20px rgba(121, 40, 202, 0.4);
+        text-align: center;
+    }
+    
     /* Terminal Output Panel Box */
     .terminal-box {
         background-color: #05070c;
@@ -103,7 +105,7 @@ st.markdown(
         color: #38bdf8;
         font-size: 0.9rem;
         border-radius: 0 8px 8px 0;
-        max-height: 250px;
+        max-height: 200px;
         overflow-y: auto;
     }
     
@@ -216,33 +218,34 @@ if st.sidebar.button("⚡ Inject Device Into Matrix"):
 if st.session_state.global_power == "OFF":
     st.error("🚨 CRITICAL WARNING: Global Radio Transmitter Module is powered down. Flip switch on sidebar to re-engage antenna array.")
 else:
-    st.markdown("### 📱 Active Wireless Interface Directory")
+    # Splitting the app dashboard structure into Directory layout and Remote Emulation Panel layout
+    directory_col, remote_col = st.columns([3, 2])
     
-    # Iterate dynamically across active registered endpoints
-    for name, metadata in list(st.session_state.devices.items()):
-        # Draw structural interface card layout using columns
-        c_info, c_status, c_power, c_actions = st.columns([3, 2, 2, 3])
+    with directory_col:
+        st.markdown("### 📱 Active Wireless Interface Directory")
         
-        with c_info:
-            st.markdown(f"📡 **{name}**")
-            st.caption(f"MAC Address: `{metadata['mac']}` | Class Profile: *{metadata['type']}*")
+        # Iterate dynamically across active registered endpoints
+        for name, metadata in list(st.session_state.devices.items()):
+            c_info, c_status, c_power = st.columns([4, 3, 3])
             
-        with c_status:
-            if metadata["status"] == "Connected":
-                st.markdown("🟢 **CONNECTED**")
-            else:
-                st.markdown("⚪ *Idle / Disconnected*")
+            with c_info:
+                st.markdown(f"📡 **{name}**")
+                st.caption(f"`{metadata['mac']}` | *{metadata['type']}*")
                 
-        with c_power:
-            if metadata["power"] == "ON":
-                st.markdown('<span class="badge-on">POWER: ON</span>', unsafe_allow_html=True)
-            else:
-                st.markdown('<span class="badge-off">POWER: OFF</span>', unsafe_allow_html=True)
-                
-        with c_actions:
+            with c_status:
+                if metadata["status"] == "Connected":
+                    st.markdown("🟢 **CONNECTED**")
+                else:
+                    st.markdown("⚪ *Disconnected*")
+                    
+            with c_power:
+                if metadata["power"] == "ON":
+                    st.markdown('<span class="badge-on">POWER: ON</span>', unsafe_allow_html=True)
+                else:
+                    st.markdown('<span class="badge-off">POWER: OFF</span>', unsafe_allow_html=True)
+            
             # Action Execution Matrix
-            col_act1, col_act2 = st.columns(2)
-            
+            col_act1, col_act2, col_act3 = st.columns(3)
             with col_act1:
                 if metadata["status"] == "Connected":
                     if st.button("🔌 Disconnect", key=f"disc_{name}"):
@@ -251,7 +254,7 @@ else:
                         st.rerun()
                 else:
                     if st.button("🔗 Connect Link", key=f"conn_{name}"):
-                        # FORCE POWER ACTION GATEWAY
+                        # FORCE POWER ON IF DISCONNECTED
                         if metadata["power"] == "OFF":
                             st.session_state.logs.append(f"⚠️ TARGET BLOCKED: {name} power radio is OFF. Initializing forced override stream...")
                             st.session_state.devices[name]["power"] = "ON"
@@ -260,7 +263,7 @@ else:
                         st.session_state.devices[name]["status"] = "Connected"
                         st.session_state.logs.append(f"✅ Secure network channel established with {name}.")
                         st.rerun()
-                        
+            
             with col_act2:
                 if metadata["power"] == "ON":
                     if st.button("🛑 Kill Power", key=f"pwr_off_{name}"):
@@ -273,7 +276,71 @@ else:
                         st.session_state.devices[name]["power"] = "ON"
                         st.session_state.logs.append(f"🔺 Forced radio hardware module on for: {name}.")
                         st.rerun()
-        st.markdown('<hr style="margin: 8px 0; border-color: #1e293b;" />', unsafe_allow_html=True)
+                        
+            with col_act3:
+                if st.button("🎮 Map Remote", key=f"rem_{name}"):
+                    # FORCE MODE TACTICAL STEP
+                    if st.session_state.devices[name]["power"] == "OFF" or st.session_state.devices[name]["status"] == "Disconnected":
+                        st.session_state.logs.append(f"🚨 REMOTE INITIALIZATION FORCE: {name} is restricted. Forcing power ON & establishing connection stream...")
+                        st.session_state.devices[name]["power"] = "ON"
+                        st.session_state.devices[name]["status"] = "Connected"
+                    
+                    st.session_state.active_remote = name
+                    st.session_state.logs.append(f"🎮 Target remote control active: {name}.")
+                    st.rerun()
+                    
+            st.markdown('<hr style="margin: 8px 0; border-color: #1e293b;" />', unsafe_allow_html=True)
+
+    # =========================================================================
+    # 🎮 REMOTE CONTROL PANEL SURFACE
+    # =========================================================================
+    with remote_col:
+        st.markdown("### 🕹️ Remote Emulation Deck")
+        target_device = st.session_state.active_remote
+        
+        if target_device in st.session_state.devices:
+            dev_data = st.session_state.devices[target_device]
+            
+            st.markdown(
+                f"""
+                <div class="remote-hull">
+                    <h4 style="color: #00dfd8; margin: 0;">REMOTE CORE: ACTIVE</h4>
+                    <p style="color: #ffffff; font-weight: 600; font-size: 1.1rem; margin-top: 5px; margin-bottom: 2px;">{target_device}</p>
+                    <span class="badge-on" style="font-size: 0.75rem;">CHANNEL LINKED TO PORT 1</span>
+                    <div style="margin-top: 20px; margin-bottom: 20px; border-top: 1px dashed #7928ca;"></div>
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
+            
+            # Interactive Input Remote Pad Toggles
+            pad_up, pad_down = st.columns(2)
+            with pad_up:
+                if st.button("🔼 Volume Up / Increase Frequency", use_container_width=True, key="r_vup"):
+                    st.session_state.logs.append(f"🎮 [{target_device}] Remote Signal Sent: VOLUME_UP (+1)")
+            with pad_down:
+                if st.button("🔽 Volume Down / Decrease Frequency", use_container_width=True, key="r_vdown"):
+                    st.session_state.logs.append(f"🎮 [{target_device}] Remote Signal Sent: VOLUME_DOWN (-1)")
+            
+            media_prev, media_play, media_next = st.columns(3)
+            with media_prev:
+                if st.button("⏮️ Prev Channel", use_container_width=True, key="r_prev"):
+                    st.session_state.logs.append(f"🎮 [{target_device}] Remote Command Executed: PREV_TRACK")
+            with media_play:
+                if st.button("⏸️ Pause / Play", use_container_width=True, key="r_play"):
+                    st.session_state.logs.append(f"🎮 [{target_device}] Remote Command Executed: TOGGLE_PLAYBACK")
+            with media_next:
+                if st.button("⏭️ Next Channel", use_container_width=True, key="r_next"):
+                    st.session_state.logs.append(f"🎮 [{target_device}] Remote Command Executed: NEXT_TRACK")
+                    
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🚨 Emergency Connection Kill", use_container_width=True, key="r_kill"):
+                st.session_state.devices[target_device]["power"] = "OFF"
+                st.session_state.devices[target_device]["status"] = "Disconnected"
+                st.session_state.logs.append(f"💥 EMERGENCY SHUTDOWN SENT: Terminated radio power string for {target_device}.")
+                st.rerun()
+        else:
+            st.info("Select a device in the interface directory and click 'Map Remote' to bind control vectors.")
 
 # =========================================================================
 # 📟 LIVE TELEMETRY TERMINAL OUTPUT LOGS
