@@ -22,8 +22,7 @@ if "discovered_devices" not in st.session_state:
     st.session_state.discovered_devices = {
         "4C:56:9D:E1:2A:4F": {"name": "Gesner iPhone 8 Plus", "mac": "4C:56:9D:E1:2A:4F", "rssi": "-54 dBm", "status": "Active / Broadcasting", "type": "Mobile Handset"},
         "00:1A:7D:DA:71:11": {"name": "Sony WH-1000XM4 Headset", "mac": "00:1A:7D:DA:71:11", "rssi": "-68 dBm", "status": "Active / Broadcasting", "type": "Audio Node"},
-        "A8:1B:6A:9F:33:22": {"name": "JBL Flip Bluetooth Speaker", "mac": "A8:1B:6A:9F:33:22", "rssi": "-49 dBm", "status": "Active / Broadcasting", "type": "Audio / Speaker Output"},
-        "74:5E:1C:89:B2:CC": {"name": "Logitech Input Mouse", "mac": "74:5E:1C:89:B2:CC", "rssi": "-42 dBm", "status": "Active / Broadcasting", "type": "Peripheral"}
+        "A8:1B:6A:9F:33:22": {"name": "JBL Flip Bluetooth Speaker", "mac": "A8:1B:6A:9F:33:22", "rssi": "-49 dBm", "status": "Active / Broadcasting", "type": "Audio / Speaker Output"}
     }
 if "connection_matrix" not in st.session_state:
     st.session_state.connection_matrix = {}
@@ -37,32 +36,40 @@ async def scan_real_hardware():
     if not BLEAK_AVAILABLE:
         return None
     try:
-        devices = await BleakScanner.discover(timeout=3.0)
+        # Scan the room's frequency environment for active BLE radio packets
+        devices = await BleakScanner.discover(timeout=4.0)
         found_dict = {}
         for d in devices:
-            name = d.name if d.name else "Unidentified Peripheral Signal"
+            # CAPTURE THE GENUINE BROADCAST NAME
+            # If the hardware returns a blank string or None, it defaults to its MAC Address signature
+            if d.name and d.name.strip() != "":
+                real_name = d.name
+            else:
+                real_name = f"Unknown Device ({d.address})"
             
-            # Smart Correction Filters for Specific Known Hardware
-            if "iPhone" in name or d.address.startswith("4C:56:9D"):
-                name = "Gesner iPhone 8 Plus"
+            # Explicit hardware target filter mapping for your own phone asset
+            if "iPhone" in real_name or d.address.startswith("4C:56:9D"):
+                real_name = "Gesner iPhone 8 Plus"
                 dev_type = "Mobile Handset"
-            # Speaker Detection Parsing Logic Rules
-            elif any(keyword in name.lower() for keyword in ["speaker", "jbl", "bose", "soundbar", "audio", "soundlink"]):
+            # Automatic spectrum bracket sorting based on true discovered metadata names
+            elif any(keyword in real_name.lower() for keyword in ["speaker", "jbl", "bose", "soundbar", "audio", "soundlink", "sony"]):
                 dev_type = "Audio / Speaker Output"
-            elif any(keyword in name.lower() for keyword in ["headphone", "headset", "buds", "sony", "beats"]):
+            elif any(keyword in real_name.lower() for keyword in ["headphone", "headset", "buds", "beats", "airpods"]):
                 dev_type = "Audio Node"
+            elif any(keyword in real_name.lower() for keyword in ["mouse", "keyboard", "input", "logi"]):
+                dev_type = "Input / Peripheral"
             else:
                 dev_type = "Discovered BLE Node"
                 
             found_dict[d.address] = {
-                "name": name,
+                "name": real_name,
                 "mac": d.address,
                 "rssi": f"{d.rssi} dBm",
                 "status": "Active / Broadcasting",
                 "type": dev_type
             }
         return found_dict
-    except Exception:
+    except Exception as e:
         return None
 
 # 2. Cyberpunk Technology Theme CSS Injection Layer
@@ -130,7 +137,7 @@ st.session_state.global_power = "ON" if global_power_toggle else "OFF"
 
 st.sidebar.markdown("---")
 
-# Manual Network Node Injector (Added Speaker Bracket Options)
+# Manual Network Node Injector
 st.sidebar.markdown("### 📡 Manual Device Injector")
 new_name = st.sidebar.text_input("Device Common Identifier:", placeholder="e.g. JBL Boombox 3")
 new_type = st.sidebar.selectbox("Device Spectrum Bracket:", ["Audio / Speaker Output", "Audio Node", "Mobile Handset", "Input / Peripheral", "Wearable / IoT"])
@@ -178,7 +185,7 @@ else:
                 real_scan = asyncio.run(scan_real_hardware())
                 if real_scan and len(real_scan) > 0:
                     st.session_state.discovered_devices = real_scan
-                    st.session_state.logs.append(f"📡 Real-world tracking synchronized. Found {len(real_scan)} verified broadcasting hardware endpoints.")
+                    st.session_state.logs.append(f"📡 Environmental discovery updated. {len(real_scan)} true broadcasting device identifiers read.")
                 else:
                     st.session_state.logs.append("📡 Scan complete. Local radio responded with clear workspace channels.")
             else:
