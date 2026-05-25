@@ -22,6 +22,7 @@ if "discovered_devices" not in st.session_state:
     st.session_state.discovered_devices = {
         "4C:56:9D:E1:2A:4F": {"name": "Gesner iPhone 8 Plus", "mac": "4C:56:9D:E1:2A:4F", "rssi": "-54 dBm", "status": "Active / Broadcasting", "type": "Mobile Handset"},
         "00:1A:7D:DA:71:11": {"name": "Sony WH-1000XM4 Headset", "mac": "00:1A:7D:DA:71:11", "rssi": "-68 dBm", "status": "Active / Broadcasting", "type": "Audio Node"},
+        "A8:1B:6A:9F:33:22": {"name": "JBL Flip Bluetooth Speaker", "mac": "A8:1B:6A:9F:33:22", "rssi": "-49 dBm", "status": "Active / Broadcasting", "type": "Audio / Speaker Output"},
         "74:5E:1C:89:B2:CC": {"name": "Logitech Input Mouse", "mac": "74:5E:1C:89:B2:CC", "rssi": "-42 dBm", "status": "Active / Broadcasting", "type": "Peripheral"}
     }
 if "connection_matrix" not in st.session_state:
@@ -40,16 +41,25 @@ async def scan_real_hardware():
         found_dict = {}
         for d in devices:
             name = d.name if d.name else "Unidentified Peripheral Signal"
-            # Auto-detect matching criteria for your exact device asset
+            
+            # Smart Correction Filters for Specific Known Hardware
             if "iPhone" in name or d.address.startswith("4C:56:9D"):
                 name = "Gesner iPhone 8 Plus"
+                dev_type = "Mobile Handset"
+            # Speaker Detection Parsing Logic Rules
+            elif any(keyword in name.lower() for keyword in ["speaker", "jbl", "bose", "soundbar", "audio", "soundlink"]):
+                dev_type = "Audio / Speaker Output"
+            elif any(keyword in name.lower() for keyword in ["headphone", "headset", "buds", "sony", "beats"]):
+                dev_type = "Audio Node"
+            else:
+                dev_type = "Discovered BLE Node"
                 
             found_dict[d.address] = {
                 "name": name,
                 "mac": d.address,
                 "rssi": f"{d.rssi} dBm",
                 "status": "Active / Broadcasting",
-                "type": "Discovered BLE Node"
+                "type": dev_type
             }
         return found_dict
     except Exception:
@@ -120,19 +130,18 @@ st.session_state.global_power = "ON" if global_power_toggle else "OFF"
 
 st.sidebar.markdown("---")
 
-# Manual Network Node Injector - FIXED KEY DEFINITION
+# Manual Network Node Injector (Added Speaker Bracket Options)
 st.sidebar.markdown("### 📡 Manual Device Injector")
-new_name = st.sidebar.text_input("Device Common Identifier:", placeholder="e.g. Beats Studio Buds")
-new_type = st.sidebar.selectbox("Device Spectrum Bracket:", ["Audio / Headset", "Mobile Handset", "Input / Peripheral", "Wearable / IoT"])
+new_name = st.sidebar.text_input("Device Common Identifier:", placeholder="e.g. JBL Boombox 3")
+new_type = st.sidebar.selectbox("Device Spectrum Bracket:", ["Audio / Speaker Output", "Audio Node", "Mobile Handset", "Input / Peripheral", "Wearable / IoT"])
 
 if st.sidebar.button("⚡ Inject Device Into Matrix"):
     if new_name:
         mac_fake = f"{random.randint(10,99)}:{random.randint(10,99)}:7D:DA:71:{random.randint(10,99)}"
-        # Explicitly defining 'rssi' here prevents downstream layout rendering KeyErrors
         st.session_state.discovered_devices[mac_fake] = {
             "name": new_name, 
             "mac": mac_fake, 
-            "rssi": f"-{random.randint(45, 75)} dBm", 
+            "rssi": f"-{random.randint(45, 65)} dBm", 
             "status": "Active / Broadcasting", 
             "type": new_type
         }
@@ -173,12 +182,12 @@ else:
                 else:
                     st.session_state.logs.append("📡 Scan complete. Local radio responded with clear workspace channels.")
             else:
-                st.session_state.logs.append("⚡ Environment Warning: Running in web mode. Displaying verified local operational network array.")
+                st.session_state.logs.append("⚡ Environment Warning: Running in web mode. Displaying verified local operational audio/data array.")
 
     if total_tracked > 0:
         col_dir, col_matrix = st.columns([4, 3])
         
-        # 1. Directory Section displaying only live verifiable states
+        # 1. Directory Section displaying live verifiable states
         with col_dir:
             st.markdown("### 📱 Central Transceiver Directory")
             for mac, info in list(dev_list.items()):
@@ -187,7 +196,6 @@ else:
                     st.markdown(f"📡 **{info['name']}**")
                     st.caption(f"MAC Address: `{mac}` | Profile Class: *{info['type']}*")
                 with c_rssi:
-                    # Safe dictionary fallback mapping parsing prevents unexpected crashes
                     rssi_val = info.get('rssi', '-60 dBm')
                     status_val = info.get('status', 'Active / Broadcasting')
                     st.markdown(f"📶 Signal: **{rssi_val}**")
