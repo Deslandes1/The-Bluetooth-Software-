@@ -41,7 +41,6 @@ async def scan_real_hardware():
         found_dict = {}
         for d in devices:
             name = d.name if d.name else "Unidentified Peripheral Signal"
-            # Auto-detect matching criteria for your exact device
             if "iPhone" in name or d.address.startswith("4C:56:9D"):
                 name = "Gesner iPhone 8 Plus"
                 
@@ -105,33 +104,47 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Alert user to current operational mode
+# =========================================================================
+# 🛠️ SIDEBAR MANAGEMENT HUB (RESTORED COMPLETE CORE)
+# =========================================================================
+st.sidebar.markdown("## ⚡ Master Transceiver System")
+st.sidebar.markdown("---")
+
+# 1. Operational Infrastructure Status Alert Toggles
 if BLEAK_AVAILABLE:
     st.sidebar.success("📡 Hardware Link: LOCAL ANTENNA ACTIVE")
 else:
-    st.sidebar.warning("🌐 Cloud Link: ENVIRONMENT EMULATION PANEL ACTIVE")
+    st.sidebar.warning("🌐 Cloud Link: ENVIRONMENT EMULATION ACTIVE")
 
-# Real-time Scan Trigger Integration
-if st.button("🔄 Execute Live Deep Environment Hardware Scan", use_container_width=True):
-    with st.spinner("Broadcasting over local radio channels..."):
-        if BLEAK_AVAILABLE:
-            real_scan = asyncio.run(scan_real_hardware())
-            if real_scan and len(real_scan) > 0:
-                st.session_state.discovered_devices = real_scan
-                st.session_state.logs.append(f"📡 Real-world hardware synchronized. Found {len(real_scan)} device endpoints.")
-            else:
-                st.session_state.logs.append("📡 Scanning... Local radio responded with clear workspace channels.")
-        else:
-            # Emulated scan additions
-            st.session_state.logs.append("⚡ Server simulation protocol executed: Polled local airwaves safely.")
+st.sidebar.markdown("---")
 
-# Dynamic Matrix Computations
+# 2. Master System Antenna Switch Toggle Configuration
+global_power_toggle = st.sidebar.toggle("Radio Frequency Power Transmitter", value=(st.session_state.global_power == "ON"))
+st.session_state.global_power = "ON" if global_power_toggle else "OFF"
+
+st.sidebar.markdown("---")
+
+# 3. Custom Manual Device Injector Components
+st.sidebar.markdown("### 📡 Manual Device Injector")
+new_name = st.sidebar.text_input("Device Common Identifier:", placeholder="e.g. Beats Studio Buds")
+new_type = st.sidebar.selectbox("Device Spectrum Bracket:", ["Audio / Headset", "Mobile Handset", "Input / Peripheral", "Wearable / IoT"])
+
+if st.sidebar.button("⚡ Inject Device Into Matrix"):
+    if new_name:
+        generated_id = f"DEV-{random.randint(1000,9999)}"
+        mac_fake = f"{random.randint(10,99)}:{random.randint(10,99)}:7D:DA:71:{random.randint(10,99)}"
+        st.session_state.discovered_devices[mac_fake] = {"name": new_name, "mac": mac_fake, "power": "OFF", "status": "Ready", "type": new_type}
+        st.session_state.logs.append(f"📥 New Target Registered: {new_name} mapped to [{mac_fake}].")
+        st.rerun()
+
+# =========================================================================
+# 📊 TOP GLOBAL MATRIX READOUT NODES (STRONG WHITE TEXT)
+# =========================================================================
 dev_list = st.session_state.discovered_devices
 total_tracked = len(dev_list)
 active_links = sum(1 for m in st.session_state.connection_matrix.values() if m == "LINKED")
 radio_online = sum(1 for d in dev_list.values() if d["power"] == "ON")
 
-# Metrics Display Row (Strong White Text Configuration)
 m1, m2, m3, m4 = st.columns(4)
 with m1:
     st.markdown(f'<div class="matrix-box"><p style="color:#fff;font-weight:700;margin:0;">Antenna Array State</p><p style="color:#fff;font-weight:900;font-size:2rem;margin:0;">{st.session_state.global_power}</p></div>', unsafe_allow_html=True)
@@ -144,72 +157,90 @@ with m4:
 
 st.markdown("---")
 
-# Main Interface Directory Layout
-if total_tracked > 0:
-    col_dir, col_matrix = st.columns([4, 3])
-    
-    with col_dir:
-        st.markdown("### 📱 Central Transceiver Directory")
-        for mac, info in list(dev_list.items()):
-            c_name, c_pwr, c_ops = st.columns([5, 2, 3])
-            with c_name:
-                st.markdown(f"📡 **{info['name']}**")
-                st.caption(f"Address: `{mac}` | State: *{info['status']}*")
-            with c_pwr:
-                if info["power"] == "ON":
-                    st.markdown('<span class="badge-on">POWER: ON</span>', unsafe_allow_html=True)
+# =========================================================================
+# 🖥️ CENTRAL MATRIX PIPELINE
+# =========================================================================
+if st.session_state.global_power == "OFF":
+    st.error("🚨 CRITICAL WARNING: Global Radio Transmitter Module is powered down. Flip switch on sidebar to re-engage antenna array.")
+else:
+    # Real-time Scan Trigger Integration
+    if st.button("🔄 Execute Live Deep Environment Hardware Scan", use_container_width=True):
+        with st.spinner("Broadcasting over local radio channels..."):
+            if BLEAK_AVAILABLE:
+                real_scan = asyncio.run(scan_real_hardware())
+                if real_scan and len(real_scan) > 0:
+                    st.session_state.discovered_devices = real_scan
+                    st.session_state.logs.append(f"📡 Real-world hardware synchronized. Found {len(real_scan)} device endpoints.")
                 else:
-                    st.markdown('<span class="badge-off">POWER: OFF</span>', unsafe_allow_html=True)
-            with c_ops:
-                if info["power"] == "ON":
-                    if st.button("🛑 Turn Off Device", key=f"off_{mac}"):
-                        st.session_state.discovered_devices[mac]["power"] = "OFF"
-                        st.session_state.discovered_devices[mac]["status"] = "Power Suspended"
-                        st.session_state.logs.append(f"🔻 User Will Override: Sent hardware KILL signal to {info['name']}.")
-                        st.rerun()
-                else:
-                    if st.button("⚡ Force Power On", key=f"on_{mac}"):
-                        st.session_state.discovered_devices[mac]["power"] = "ON"
-                        st.session_state.discovered_devices[mac]["status"] = "Ready"
-                        st.session_state.logs.append(f"🔺 User Will Override: Sent hardware FORCE ON command stream to {info['name']}.")
-                        st.rerun()
-            st.markdown('<hr style="margin:6px 0; border-color:#1e293b;"/>', unsafe_allow_html=True)
-
-    # Cross-Device Interconnect Matrix Panel
-    with col_matrix:
-        st.markdown("### 🎚️ Cross-Device Route Patch Bay")
-        
-        selectable_names = [info["name"] for info in dev_list.values()]
-        node_a = st.selectbox("Select Signal Source (Device A):", selectable_names, index=0)
-        node_b = st.selectbox("Select Target Destination (Device B):", selectable_names, index=min(1, len(selectable_names)-1))
-        
-        if node_a == node_b:
-            st.warning("Select two distinct target addresses to construct a valid mesh route.")
-        else:
-            matrix_key = f"{node_a} <--> {node_b}"
-            reverse_matrix_key = f"{node_b} <--> {node_a}"
-            
-            is_linked = st.session_state.connection_matrix.get(matrix_key) == "LINKED" or st.session_state.connection_matrix.get(reverse_matrix_key) == "LINKED"
-            
-            if is_linked:
-                st.info(f"🔗 Current Status: ROUTE ACTIVE between {node_a} and {node_b}")
-                if st.button("🔌 Sever Interconnection Link", use_container_width=True):
-                    st.session_state.connection_matrix[matrix_key] = "SEVERED"
-                    st.session_state.connection_matrix[reverse_matrix_key] = "SEVERED"
-                    st.session_state.logs.append(f"✂️ Routing Interconnect Severed: Disconnected link channel between [{node_a}] and [{node_b}].")
-                    st.rerun()
+                    st.session_state.logs.append("📡 Scanning... Local radio responded with clear workspace channels.")
             else:
-                st.error(f"❌ Current Status: NO ACTIVE ROUTE channels mapped.")
-                if st.button("🔗 Link Devices Together", use_container_width=True):
-                    for mac_addr, data in dev_list.items():
-                        if data["name"] in [node_a, node_b] and data["power"] == "OFF":
-                            st.session_state.discovered_devices[mac_addr]["power"] = "ON"
-                            st.session_state.discovered_devices[mac_addr]["status"] = "Ready"
-                            st.session_state.logs.append(f"⚡ FORCE ON INITIATED: Intercepted component radio matrix for {data['name']} to bridge links.")
-                    
-                    st.session_state.connection_matrix[matrix_key] = "LINKED"
-                    st.session_state.logs.append(f"✅ Bridge Channel Formed: Interconnected [{node_a}] directly to [{node_b}].")
-                    st.rerun()
+                st.session_state.logs.append("⚡ Server simulation protocol executed: Polled local airwaves safely.")
+
+    if total_tracked > 0:
+        col_dir, col_matrix = st.columns([4, 3])
+        
+        with col_dir:
+            st.markdown("### 📱 Central Transceiver Directory")
+            for mac, info in list(dev_list.items()):
+                c_name, c_pwr, c_ops = st.columns([5, 2, 3])
+                with c_name:
+                    st.markdown(f"📡 **{info['name']}**")
+                    st.caption(f"Address: `{mac}` | State: *{info['status']}*")
+                with c_pwr:
+                    if info["power"] == "ON":
+                        st.markdown('<span class="badge-on">POWER: ON</span>', unsafe_allow_html=True)
+                    else:
+                        st.markdown('<span class="badge-off">POWER: OFF</span>', unsafe_allow_html=True)
+                with c_ops:
+                    if info["power"] == "ON":
+                        if st.button("🛑 Turn Off Device", key=f"off_{mac}"):
+                            st.session_state.discovered_devices[mac]["power"] = "OFF"
+                            st.session_state.discovered_devices[mac]["status"] = "Power Suspended"
+                            st.session_state.logs.append(f"🔻 User Will Override: Sent hardware KILL signal to {info['name']}.")
+                            st.rerun()
+                    else:
+                        if st.button("⚡ Force Power On", key=f"on_{mac}"):
+                            st.session_state.discovered_devices[mac]["power"] = "ON"
+                            st.session_state.discovered_devices[mac]["status"] = "Ready"
+                            st.session_state.logs.append(f"🔺 User Will Override: Sent hardware FORCE ON command stream to {info['name']}.")
+                            st.rerun()
+                st.markdown('<hr style="margin:6px 0; border-color:#1e293b;"/>', unsafe_allow_html=True)
+
+        # Cross-Device Interconnect Matrix Panel
+        with col_matrix:
+            st.markdown("### 🎚️ Cross-Device Route Patch Bay")
+            
+            selectable_names = [info["name"] for info in dev_list.values()]
+            node_a = st.selectbox("Select Signal Source (Device A):", selectable_names, index=0)
+            node_b = st.selectbox("Select Target Destination (Device B):", selectable_names, index=min(1, len(selectable_names)-1))
+            
+            if node_a == node_b:
+                st.warning("Select two distinct target addresses to construct a valid mesh route.")
+            else:
+                matrix_key = f"{node_a} <--> {node_b}"
+                reverse_matrix_key = f"{node_b} <--> {node_a}"
+                
+                is_linked = st.session_state.connection_matrix.get(matrix_key) == "LINKED" or st.session_state.connection_matrix.get(reverse_matrix_key) == "LINKED"
+                
+                if is_linked:
+                    st.info(f"🔗 Current Status: ROUTE ACTIVE between {node_a} and {node_b}")
+                    if st.button("🔌 Sever Interconnection Link", use_container_width=True):
+                        st.session_state.connection_matrix[matrix_key] = "SEVERED"
+                        st.session_state.connection_matrix[reverse_matrix_key] = "SEVERED"
+                        st.session_state.logs.append(f"✂️ Routing Interconnect Severed: Disconnected link channel between [{node_a}] and [{node_b}].")
+                        st.rerun()
+                else:
+                    st.error(f"❌ Current Status: NO ACTIVE ROUTE channels mapped.")
+                    if st.button("🔗 Link Devices Together", use_container_width=True):
+                        for mac_addr, data in dev_list.items():
+                            if data["name"] in [node_a, node_b] and data["power"] == "OFF":
+                                st.session_state.discovered_devices[mac_addr]["power"] = "ON"
+                                st.session_state.discovered_devices[mac_addr]["status"] = "Ready"
+                                st.session_state.logs.append(f"⚡ FORCE ON INITIATED: Intercepted component radio matrix for {data['name']} to bridge links.")
+                        
+                        st.session_state.connection_matrix[matrix_key] = "LINKED"
+                        st.session_state.logs.append(f"✅ Bridge Channel Formed: Interconnected [{node_a}] directly to [{node_b}].")
+                        st.rerun()
 
 # Terminal Log Output
 st.markdown("### 📟 Live Hardware Telemetry Log Stream")
